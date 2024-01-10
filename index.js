@@ -9,6 +9,10 @@ dotenv.config();
 // Initialize an Express application
 const app = express();
 
+// Define the port the Express application will listen on
+//render web host port or local port
+const PORT = process.env.PORT || 4000;
+
 // Create an Apollo Server instance with your type definitions and resolvers
 const apolloServer = new ApolloServer({
   typeDefs,
@@ -24,7 +28,7 @@ async function startServer() {
   apolloServer.applyMiddleware({ app, path: "/graphql" });
 
   // Start the Express server
-  app.listen({ port: 4000 }, () => {
+  app.listen(PORT, () => {
     console.log(
       `Server ready at http://localhost:4000${apolloServer.graphqlPath}`
     );
