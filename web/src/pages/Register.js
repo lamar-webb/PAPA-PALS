@@ -5,6 +5,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "../util/useForm.js";
 import { AuthContext } from "../context/auth";
+import Login_Register_pic from "../images/Login_Register_pic.png";
+import { Avatar } from "@mui/material";
 
 //graphql mutation to register a user
 const REGISTER_USER = gql`
@@ -142,6 +144,19 @@ function Register() {
             Register
           </Button>
         </Box>
+      </Box>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+        <Avatar
+          sx={{
+            width: 400, // Adjust size as needed
+            height: 400, // Adjust size as needed
+            border: "3px solid black", // Optional: adds a border around the circle
+          }}
+          alt="Post Image"
+          //TODO:add image to database schema and allow users to upload their own user photo
+          src={Login_Register_pic}
+          imgProps={{ style: { borderRadius: "50%" } }}
+        />
       </Box>
     </Container>
   );
