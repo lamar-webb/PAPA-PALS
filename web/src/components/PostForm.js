@@ -106,6 +106,3 @@ const CREATE_POST_MUTATION = gql`
 `;
 
 export default PostForm;
-
-//TODO: when the user start to type the error message should disappear
-//TODO: handle the error os making a post when the token is expired, user should be redirected to the sign in page
