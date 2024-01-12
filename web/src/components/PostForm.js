@@ -15,23 +15,29 @@ function PostForm() {
   const [createPost, { error }] = useMutation(CREATE_POST_MUTATION, {
     variables: values,
     update(proxy, result) {
-      const data = proxy.readQuery({
-        query: FETCH_POSTS_QUERY,
-      });
-      // Create a new object for the updated data
-      const newData = {
-        ...data,
-        getPosts: [result.data.createPost, ...data.getPosts],
-      };
-      proxy.writeQuery({ query: FETCH_POSTS_QUERY, data: newData });
-      values.body = "";
+      try {
+        const data = proxy.readQuery({
+          query: FETCH_POSTS_QUERY,
+        });
+
+        if (data) {
+          const newData = {
+            ...data,
+            getPosts: [result.data.createPost, ...data.getPosts],
+          };
+
+          proxy.writeQuery({ query: FETCH_POSTS_QUERY, data: newData });
+          values.body = "";
+        }
+      } catch (err) {
+        console.error("Error while updating the cache:", err);
+        // Handle the error, e.g., by refetching the query or showing an error message
+      }
     },
   });
 
   function createPostCallBack() {
-    createPost().catch((err) =>
-      console.log(err, "this is the error from post form")
-    );
+    createPost();
   }
 
   return (
@@ -60,7 +66,7 @@ function PostForm() {
         onChange={handleChange("body")}
         variant="outlined"
         error={error ? true : false}
-        helperText={error ? error.graphQLErrors[0].message : ""}
+        helperText={error ? "Something went wrong :(" : ""}
       />
       <Button
         variant="contained"

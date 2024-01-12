@@ -53,19 +53,30 @@ function SinglePost() {
     update(proxy) {
       console.log("post deleted");
       navigate("/");
-      //TODO: remove post from cache
-      const existingData = proxy.readQuery({
-        query: FETCH_POSTS_QUERY,
-      });
-      console.log(existingData);
 
-      const newData = {
-        ...existingData,
-        getPosts: existingData.getPosts.filter((p) => p.id !== post.id),
-      };
+      try {
+        const existingData = proxy.readQuery({
+          query: FETCH_POSTS_QUERY,
+        });
+        console.log(existingData);
 
-      // Write the new data object back to the cache
-      proxy.writeQuery({ query: FETCH_POSTS_QUERY, data: newData });
+        // Check if the existingData is valid
+        if (existingData && existingData.getPosts) {
+          const newData = {
+            ...existingData,
+            getPosts: existingData.getPosts.filter((p) => p.id !== post.id),
+          };
+
+          // Write the new data object back to the cache
+          proxy.writeQuery({ query: FETCH_POSTS_QUERY, data: newData });
+        } else {
+          console.error(
+            "Unable to update the cache as existing data is null or invalid."
+          );
+        }
+      } catch (err) {
+        console.error("Error while updating the cache:", err);
+      }
     },
     onError(err) {
       console.log(err);
@@ -74,36 +85,47 @@ function SinglePost() {
 
   const [submitComment] = useMutation(CREATE_COMMENT_MUTATION, {
     update(proxy, result) {
-      // Read the current post data from the cache
-      const data = proxy.readQuery({
-        query: FETCH_POST_QUERY,
-        variables: { postId },
-      });
+      try {
+        // Read the current post data from the cache
+        const data = proxy.readQuery({
+          query: FETCH_POST_QUERY,
+          variables: { postId },
+        });
 
-      // Create a new comments array with the new comment
-      let newComments = [];
-      if (data.getPost.comments) {
-        newComments = [result.data.createComment, ...data.getPost.comments];
-      } else {
-        newComments = [result.data.createComment];
-      }
+        // Ensure data and data.getPost are valid
+        if (!data || !data.getPost) {
+          throw new Error("Post data not found in the cache");
+        }
 
-      // Write the updated data back to the cache
-      proxy.writeQuery({
-        query: FETCH_POST_QUERY,
-        data: {
-          ...data,
-          getPost: {
-            ...data.getPost,
-            comments: newComments,
+        // Create a new comments array with the new comment
+        const newComments = data.getPost.comments
+          ? [result.data.createComment, ...data.getPost.comments]
+          : [result.data.createComment];
+
+        // Write the updated data back to the cache
+        proxy.writeQuery({
+          query: FETCH_POST_QUERY,
+          data: {
+            ...data,
+            getPost: {
+              ...data.getPost,
+              comments: newComments,
+            },
           },
-        },
-        variables: { postId },
-      });
+          variables: { postId },
+        });
 
-      // Reset the comment input field
-      setComment("");
-      commentInputRef.current.blur();
+        // Reset the comment input field
+        setComment("");
+        if (commentInputRef.current) {
+          commentInputRef.current.blur();
+        }
+      } catch (err) {
+        console.error(
+          "Error updating the cache after submitting a comment:",
+          err
+        );
+      }
     },
     variables: {
       postId: postId,
@@ -113,31 +135,49 @@ function SinglePost() {
 
   const [deleteCommentMutation] = useMutation(DELETE_COMMENT_MUTATION, {
     update(proxy, result) {
-      // Logic to update the UI or cache after successful deletion
-      // For example, you might want to remove the comment from the list
-      const existingData = proxy.readQuery({
-        query: FETCH_POST_QUERY,
-        variables: { postId },
-      });
+      try {
+        // Read the existing post data from the cache
+        const existingData = proxy.readQuery({
+          query: FETCH_POST_QUERY,
+          variables: { postId },
+        });
 
-      const updatedComments = existingData.getPost.comments.filter(
-        (comment) => comment.id !== deleteContext.commentId
-      );
+        // Ensure existingData and existingData.getPost.comments are valid
+        if (
+          !existingData ||
+          !existingData.getPost ||
+          !Array.isArray(existingData.getPost.comments)
+        ) {
+          throw new Error(
+            "Existing post data is invalid or not found in the cache"
+          );
+        }
 
-      proxy.writeQuery({
-        query: FETCH_POST_QUERY,
-        data: {
-          ...existingData,
-          getPost: {
-            ...existingData.getPost,
-            comments: updatedComments,
+        // Filter out the deleted comment
+        const updatedComments = existingData.getPost.comments.filter(
+          (comment) => comment.id !== deleteContext.commentId
+        );
+
+        // Write the updated comments back to the cache
+        proxy.writeQuery({
+          query: FETCH_POST_QUERY,
+          data: {
+            ...existingData,
+            getPost: {
+              ...existingData.getPost,
+              comments: updatedComments,
+            },
           },
-        },
-        variables: { postId },
-      });
+          variables: { postId },
+        });
+      } catch (err) {
+        console.error(
+          "Error updating the cache after deleting a comment:",
+          err
+        );
+      }
     },
     onError(err) {
-      // Error handling
       console.log(err);
     },
   });
@@ -145,7 +185,6 @@ function SinglePost() {
   if (error) {
     console.error("Error fetching the post:", error);
     navigate("/");
-    // return <p>Error loading the post.</p>;
   }
 
   if (loading) {
@@ -173,7 +212,6 @@ function SinglePost() {
       });
     }
 
-    //deletePostMutation({ variables: { postId: post.id } });
     closeConfirmDialog();
   };
 

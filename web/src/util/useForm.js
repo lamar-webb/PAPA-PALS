@@ -12,8 +12,6 @@ export const useForm = (callback, initialState = {}) => {
   const handleSubmit = (event) => {
     event.preventDefault();
     callback();
-    // print the form values to the console
-    console.log(values, "this is the form values from custom hook");
   };
 
   return {

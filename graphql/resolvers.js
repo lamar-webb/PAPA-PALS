@@ -47,7 +47,7 @@ const resolvers = {
           SELECT p.id, p.body, p.created_at, u.username         
           FROM posts p
           JOIN users u ON p.user_id = u.id
-          ORDER BY p.created_at DESC;`,
+          ORDER BY p.created_at DESC LIMIT 2;`, // Limit to 2 posts because of databse limits of the free tier
           []
         );
         return posts;
@@ -76,7 +76,6 @@ const resolvers = {
 
         return post[0];
       } catch (err) {
-        // this error will be caught by the Apollo Server and returned to the client
         throw new Error("Error fetching post: " + err.message);
       }
     },
@@ -99,15 +98,19 @@ const resolvers = {
     comments: async (parent) => {
       // parent is the post object
       const comments = await queryDB(
-        "SELECT * FROM comments WHERE post_id = $1 ORDER BY created_at DESC;",
+        "SELECT * FROM comments WHERE post_id = $1 ORDER BY created_at DESC LIMIT 2;", // Limit to 2 comments because of databse limits of the free tier
         [parent.id]
       );
       return comments;
     },
     likes: async (parent) => {
-      const likes = await queryDB("SELECT * FROM likes WHERE post_id = $1;", [
-        parent.id,
-      ]);
+      const likes = await queryDB(
+        "SELECT * FROM likes WHERE post_id = $1 LIMIT 2;",
+        [
+          // Limit to 2 likes because of databse limits of the free tier
+          parent.id,
+        ]
+      );
       return likes;
     },
   },

@@ -43,6 +43,7 @@ const typeDefs = `#graphql
     getPost(postId: ID!): Post!
     getComments(postId: ID!): [Comment]!
     
+    
   }
   type Mutation {
     register(registerInput: RegisterInput): User!
